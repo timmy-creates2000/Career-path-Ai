@@ -51,9 +51,15 @@ export default function CareerChatbot({ userProfile }: CareerChatbotProps) {
     setIsLoading(true);
 
     try {
+      const customKey = localStorage.getItem("career-path-ai-custom-key") || "";
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (customKey.trim().length > 0) {
+        headers["x-gemini-key"] = customKey.trim();
+      }
+
       const response = await fetch("/api/chat", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: headers,
         body: JSON.stringify({
           messages: [...messages, userMsg].map((m) => ({
             role: m.role,

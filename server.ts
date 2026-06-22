@@ -11,15 +11,28 @@ const PORT = 3000;
 
 app.use(express.json());
 
-// Initialize GoogleGenAI client with telemetric header
-const ai = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY,
-  httpOptions: {
-    headers: {
-      "User-Agent": "aistudio-build",
+// Helper to resolve the correct client based on request headers or system environment
+function getAiClient(req: Request): GoogleGenAI {
+  const customKey = req.headers["x-gemini-key"] as string | undefined;
+  
+  // Clean custom key or env key to ensure placeholders or empty values aren't used
+  const key = (customKey && customKey.trim().length > 0) ? customKey.trim() : process.env.GEMINI_API_KEY;
+  
+  if (!key || key === "MY_GEMINI_API_KEY" || key === "") {
+    throw new Error(
+      "Gemini API Key is missing. Since the server does not have a key, please enter your own Gemini API Key in the Setup icon at the top of the page."
+    );
+  }
+  
+  return new GoogleGenAI({
+    apiKey: key,
+    httpOptions: {
+      headers: {
+        "User-Agent": "aistudio-build",
+      },
     },
-  },
-});
+  });
+}
 
 // Endpoint to generate Nigerian local career pathway and roadmap
 app.post("/api/generate-career-path", async (req: Request, res: Response): Promise<void> => {
@@ -38,6 +51,8 @@ app.post("/api/generate-career-path", async (req: Request, res: Response): Promi
       res.status(400).json({ error: "Education level and interests are required." });
       return;
     }
+
+    const ai = getAiClient(req);
 
     // Build immediate context for the LLM
     const userPrompt = `
@@ -158,6 +173,8 @@ app.post("/api/chat", async (req: Request, res: Response): Promise<void> => {
       res.status(400).json({ error: "Messages array is required." });
       return;
     }
+
+    const ai = getAiClient(req);
 
     // Capture user profile context for the conversation if available
     let systemInstruction = 

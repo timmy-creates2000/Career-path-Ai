@@ -29,11 +29,19 @@ export default function App() {
   const [selectedPathTitle, setSelectedPathTitle] = useState<string>("");
   const [currentTab, setCurrentTab] = useState<"paths" | "roadmap" | "chat">("paths");
 
+  // Custom Gemini API Key configuration state
+  const [customKeyInput, setCustomKeyInput] = useState("");
+  const [showKeySetup, setShowKeySetup] = useState(false);
+  const [keySaveSuccess, setKeySaveSuccess] = useState(false);
+
   // Load profile and result from localStorage
   useEffect(() => {
     const savedProfile = localStorage.getItem("career-path-ai-profile");
     const savedResult = localStorage.getItem("career-path-ai-result");
     const savedSelectedPath = localStorage.getItem("career-path-ai-selected-path");
+    const savedCustomKey = localStorage.getItem("career-path-ai-custom-key") || "";
+
+    setCustomKeyInput(savedCustomKey);
 
     if (savedProfile) {
       try {
@@ -75,14 +83,27 @@ export default function App() {
     setError(null);
 
     try {
+      const customKey = localStorage.getItem("career-path-ai-custom-key") || "";
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (customKey.trim().length > 0) {
+        headers["x-gemini-key"] = customKey.trim();
+      }
+
       const response = await fetch("/api/generate-career-path", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: headers,
         body: JSON.stringify(profile),
       });
 
       if (!response.ok) {
-        throw new Error("Unable to contact your big sister/brother. Please try again.");
+        let errMessage = "Unable to contact your big sister/brother. Please try again.";
+        try {
+          const errData = await response.json();
+          if (errData && errData.error) {
+            errMessage = errData.error;
+          }
+        } catch (_) {}
+        throw new Error(errMessage);
       }
 
       const data: CareerPathAIResult = await response.json();
@@ -122,6 +143,15 @@ export default function App() {
     }
   };
 
+  const handleSaveCustomKey = () => {
+    localStorage.setItem("career-path-ai-custom-key", customKeyInput.trim());
+    setKeySaveSuccess(true);
+    setTimeout(() => {
+      setKeySaveSuccess(false);
+      setShowKeySetup(false);
+    }, 1500);
+  };
+
   // Main UI routing
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans selection:bg-emerald-100 selection:text-emerald-950">
@@ -129,8 +159,8 @@ export default function App() {
       {/* Platform Header Banner */}
       <header className="bg-white border-b border-gray-150 sticky top-0 z-30 px-4 md:px-8 py-4 flex items-center justify-between shadow-xs">
         <div className="flex items-center gap-3">
-          <div className="bg-emerald-600 text-white font-extrabold w-10 h-10 rounded-xl flex items-center justify-center shadow-md shadow-emerald-600/15">
-            🇳🇬
+          <div className="bg-emerald-600 text-white w-10 h-10 rounded-xl flex items-center justify-center shadow-md shadow-emerald-600/15">
+            <GraduationCap className="w-5 h-5" />
           </div>
           <div>
             <h1 className="text-lg font-black tracking-tight text-slate-950 flex items-center gap-1.5 leading-none">
@@ -141,18 +171,79 @@ export default function App() {
           </div>
         </div>
 
-        {userProfile && (
-          <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2">
+          {/* Custom API Key Button */}
+          <div className="relative">
+            <button
+              onClick={() => setShowKeySetup(!showKeySetup)}
+              id="api-key-setup-btn"
+              className={`px-3.5 py-1.5 border rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                customKeyInput.trim().length > 0
+                  ? "border-emerald-200 bg-emerald-50 text-emerald-700 font-extrabold"
+                  : "border-gray-200 hover:border-emerald-200 text-gray-650 hover:text-emerald-700"
+              }`}
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+              <span>{customKeyInput.trim().length > 0 ? "API Active" : "Setup API Key"}</span>
+            </button>
+
+            {/* Custom API Key Form Dropdown */}
+            {showKeySetup && (
+              <div 
+                className="absolute right-0 mt-2 w-80 bg-white border border-gray-150 rounded-xl p-4 shadow-xl z-50 text-left space-y-3"
+                id="api-key-dropdown"
+              >
+                <div className="space-y-1">
+                  <h4 className="text-xs font-black text-slate-900 tracking-tight">Set Your Gemini API Key</h4>
+                  <p className="text-[10px] text-gray-500 leading-normal">
+                    If you face internet issues or need direct connection, enter your personal key from Google AI Studio. It is saved securely in your browser's localStorage.
+                  </p>
+                </div>
+                
+                <input
+                  type="password"
+                  id="api-key-input"
+                  value={customKeyInput}
+                  onChange={(e) => setCustomKeyInput(e.target.value)}
+                  placeholder="Paste AI Studio API key here"
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-emerald-500 outline-none font-mono"
+                />
+
+                <div className="flex items-center justify-between gap-2.5">
+                  <button
+                    onClick={() => {
+                      setCustomKeyInput("");
+                      localStorage.removeItem("career-path-ai-custom-key");
+                      setShowKeySetup(false);
+                    }}
+                    id="clear-api-key-btn"
+                    className="text-[10px] font-bold text-gray-400 hover:text-red-500 transition-colors"
+                  >
+                    Clear Key
+                  </button>
+                  <button
+                    onClick={handleSaveCustomKey}
+                    id="save-api-key-btn"
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg px-3 py-1.5 text-[11px] font-bold transition-colors"
+                  >
+                    {keySaveSuccess ? "Saved ✓" : "Save Key"}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {userProfile && (
             <button
               onClick={handleReset}
               id="reset-profile-top-btn"
-              className="px-3.5 py-1.5 border border-gray-200 hover:border-red-200 text-xs font-bold text-gray-650 hover:text-red-600 rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
+              className="px-3.5 py-1.5 border border-gray-200 hover:border-red-200 text-xs font-bold text-gray-650 hover:text-red-600 rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
             >
               <LogOut className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">New Setup</span>
             </button>
-          </div>
-        )}
+          )}
+        </div>
       </header>
 
       {/* Main Container Workspace */}
