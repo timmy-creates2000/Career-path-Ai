@@ -1,0 +1,6 @@
+{
+  "name": "Career Path AI",
+  "description": "AI-powered localized career guidance and digital skills roadmap platform for Nigerian students, graduates, and professionals.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
