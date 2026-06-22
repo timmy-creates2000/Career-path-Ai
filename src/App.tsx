@@ -312,23 +312,105 @@ export default function App() {
               key="error"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="flex-1 flex flex-col items-center justify-center py-12 max-w-md mx-auto"
+              className="flex-1 flex flex-col items-center justify-center py-12 max-w-lg mx-auto w-full"
               id="error-screen"
             >
-              <div className="bg-red-50 border border-red-200 text-red-800 rounded-2xl p-6 text-center space-y-4">
-                <AlertCircle className="w-10 h-10 text-red-500 mx-auto" />
-                <h3 className="text-lg font-bold text-red-950">Aah, Network Strike!</h3>
-                <p className="text-xs sm:text-sm text-red-700 leading-relaxed">
-                  {error}. Your Senior Tech Bro/Sis is currently facing internet challenges. Try submitting again.
-                </p>
-                <div className="pt-2">
+              <div className="bg-white border border-gray-150 rounded-2xl p-6 md:p-8 shadow-sm space-y-6 w-full">
+                <div className="flex flex-col items-center text-center space-y-3">
+                  <div className="w-12 h-12 rounded-full bg-red-50 border border-red-200 flex items-center justify-center text-red-500">
+                    <AlertCircle className="w-6 h-6" />
+                  </div>
+                  <h3 className="text-lg font-extrabold text-slate-900 tracking-tight">Active API / Network Sync Delay</h3>
+                  <div className="bg-red-50/60 border border-red-100 rounded-xl p-3 text-xs text-red-800 leading-relaxed font-medium">
+                    {error}
+                  </div>
+                  <p className="text-xs text-slate-500 leading-relaxed max-w-sm">
+                    Your Senior Tech Bro/Sis hit a speedbump trying to connect. This happens when the server does not have an active API Key or internet access is delayed.
+                  </p>
+                </div>
+
+                {/* API Setup Walkthrough Info */}
+                <div className="bg-slate-50 rounded-xl p-4.5 border border-gray-150 space-y-3 text-left">
+                  <h4 className="text-[11px] font-black text-slate-800 tracking-wider uppercase flex items-center gap-1.5">
+                    💡 Deployment Configuration Guide
+                  </h4>
+                  <p className="text-[11px] text-gray-500 leading-normal">
+                    To make this deployment live permanently without entering custom keys on the screen, add the following key inside your workspace <code className="bg-gray-200 text-gray-750 px-1 py-0.5 rounded text-[10px] font-mono font-bold">.env</code> or Platform Secrets under Settings:
+                  </p>
+                  <div className="bg-slate-900 text-slate-100 rounded-lg p-3 text-[10.5px] font-mono leading-relaxed border border-slate-950 overflow-x-auto">
+                    <span className="text-amber-400"># In your environment secrets or .env file:</span><br />
+                    <span className="text-emerald-400">GEMINI_API_KEY</span>=your_actual_gemini_api_key_here
+                  </div>
+                </div>
+
+                {/* Direct Key Entry Component inside error screen */}
+                <div className="bg-emerald-50/60 border border-emerald-110 rounded-xl p-4.5 space-y-3.5 text-left">
+                  <div className="flex items-start gap-2.5">
+                    <div className="bg-emerald-600 text-white rounded-lg p-1.5 flex items-center justify-center mt-0.5">
+                      <Sparkles className="w-3.5 h-3.5" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-black text-emerald-950">Quick Fix: Paste Key Directly</h4>
+                      <p className="text-[11px] text-emerald-850 leading-normal">
+                        Paste your Gemini API key from Google AI Studio. It runs on the server through secure client headers, and is stored only in your local browser state.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <input
+                      type="password"
+                      id="error-screen-api-key"
+                      placeholder="Paste AIzaSy... key format here"
+                      value={customKeyInput}
+                      onChange={(e) => setCustomKeyInput(e.target.value)}
+                      className="w-full px-3.5 py-2.5 bg-white border border-emerald-200 rounded-lg text-xs placeholder-emerald-800/40 text-slate-900 focus:ring-2 focus:ring-emerald-500 outline-none font-mono"
+                    />
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <button
+                        onClick={async () => {
+                          const cleaned = customKeyInput.trim();
+                          localStorage.setItem("career-path-ai-custom-key", cleaned);
+                          setError(null);
+                          if (userProfile) {
+                            await handleOnboardingComplete(userProfile);
+                          } else {
+                            setError("Please re-enter details before generating.");
+                          }
+                        }}
+                        id="error-screen-save-btn"
+                        className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-4 py-2.5 rounded-lg transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+                      >
+                        <RefreshCcw className="w-3.5 h-3.5" />
+                        <span>Save Key & Try Generating</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between border-t border-gray-150 pt-4.5">
                   <button
-                    onClick={() => userProfile && handleOnboardingComplete(userProfile)}
-                    id="retry-button"
-                    className="bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-4 py-2.5 rounded-lg transition-colors flex items-center gap-1.5 mx-auto cursor-pointer shadow-sm"
+                    onClick={() => {
+                      setError(null);
+                      setUserProfile(null);
+                    }}
+                    id="error-screen-back-btn"
+                    className="text-xs font-bold text-gray-500 hover:text-slate-800 transition-colors flex items-center gap-1"
                   >
-                    <RefreshCcw className="w-3.5 h-3.5" />
-                    <span>Try Generating Again</span>
+                    ← Edit Setup Form
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setError(null);
+                      if (userProfile) {
+                        handleOnboardingComplete(userProfile);
+                      }
+                    }}
+                    id="error-screen-retry-btn"
+                    className="text-xs font-extrabold text-emerald-600 hover:text-emerald-700 transition-colors flex items-center gap-1"
+                  >
+                    Just Retry Code Connection
                   </button>
                 </div>
               </div>
