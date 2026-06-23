@@ -5,6 +5,7 @@ import { Sparkles, ArrowRight, ArrowLeft, GraduationCap, MapPin, Wallet, BookOpe
 
 interface OnboardingProps {
   onComplete: (profile: UserProfile) => void;
+  initialProfile?: UserProfile | null;
 }
 
 const NIGERIAN_STATES = [
@@ -17,15 +18,15 @@ const SUGGESTED_COURSES = [
   "Mass Communication", "Accounting", "Economics", "None - Just looking for skills"
 ];
 
-export default function Onboarding({ onComplete }: OnboardingProps) {
+export default function Onboarding({ onComplete, initialProfile }: OnboardingProps) {
   const [step, setStep] = useState(1);
-  const [educationLevel, setEducationLevel] = useState<UserProfile["educationLevel"] | "">("");
-  const [courseField, setCourseField] = useState("");
-  const [stateResidence, setStateResidence] = useState("");
-  const [monthlyBudget, setMonthlyBudget] = useState("");
-  const [interests, setInterests] = useState("");
-  const [futureHope, setFutureHope] = useState("");
-  const [timelinePreference, setTimelinePreference] = useState<UserProfile["timelinePreference"] | "">("");
+  const [educationLevel, setEducationLevel] = useState<UserProfile["educationLevel"] | "">(initialProfile?.educationLevel || "");
+  const [courseField, setCourseField] = useState(initialProfile?.courseField || "");
+  const [stateResidence, setStateResidence] = useState(initialProfile?.stateResidence || "");
+  const [monthlyBudget, setMonthlyBudget] = useState(initialProfile?.monthlyBudget || "");
+  const [interests, setInterests] = useState(initialProfile?.interests || "");
+  const [futureHope, setFutureHope] = useState(initialProfile?.futureHope || "");
+  const [timelinePreference, setTimelinePreference] = useState<UserProfile["timelinePreference"] | "">(initialProfile?.timelinePreference || "");
 
   const handleNext = () => {
     if (step < 7) {
